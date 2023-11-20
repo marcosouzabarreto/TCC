@@ -28,7 +28,7 @@ def DataPreProcessing(df):
 
 
 def SplittingDataSet(df1, scaler):
-    train_size = int(len(df1) * 0.85)
+    train_size = int(len(df1) * 0.80)
     train_data, test_data = df1[0:train_size, :], df1[train_size:len(df1), :1]
     time_step = 100
     X_train, Y_train = create_dataset(df1, time_step)
@@ -88,7 +88,8 @@ def newGraph(model, df1, scaler, test_data, X_test):
     n_steps = 100
     i = 0
     mainVal = 0
-    while (i < 30):
+    daysToPredict = 15
+    while (i < daysToPredict):
 
         if (len(temp_input) > 100):
             # print(temp_input)
@@ -343,7 +344,7 @@ def main():
             # Display the real-time stock data in Streamlit
             df1, scaler = DataPreProcessing(df)
             train_predict, test_predict, model, df1, test_data, X_test = SplittingDataSet(df1, scaler)
-            PlotGraph(train_predict, test_predict, df1, scaler)
+            # PlotGraph(train_predict, test_predict, df1, scaler)
             # PrintPredictionPlot(scaler, test_data, test_predict)
             newGraph(model, df1, scaler, test_data, X_test)
 
