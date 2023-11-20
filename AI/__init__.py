@@ -1,7 +1,4 @@
 import yfinance as yf
-import pandas as pd
-from urllib.request import urlopen, Request
-from bs4 import BeautifulSoup
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
@@ -51,35 +48,6 @@ def SplittingDataSet(df1, scaler):
     return train_predict, test_predict, model, df1, test_data, X_test
 
 
-def PlotGraph(train_predict, test_predict, df1, scaler):
-    ### Plotting
-    look_back = 100
-    start_idx = len(train_predict) + (look_back * 2) + 1
-    end_idx = len(df1) - 1
-
-    if start_idx <= end_idx:
-        # Existing code remains the same
-
-        trainPredictPlot = np.empty_like(df1)
-        trainPredictPlot[:, :] = np.nan
-        trainPredictPlot[look_back:len(train_predict) + look_back, :] = train_predict
-
-        testPredictPlot = np.empty_like(df1)
-        testPredictPlot[:, :] = np.nan
-        testPredictPlot[start_idx:end_idx, :] = test_predict
-
-        fig, ax = plt.subplots(figsize=(10, 6))
-
-        ax.plot(scaler.inverse_transform(df1), label='Original Data')
-        ax.plot(trainPredictPlot, label='Train Predictions')
-        ax.plot(testPredictPlot, label='Test Predictions')
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Value')
-        ax.legend()
-    else:
-        print(f"Start index {start_idx} is greater than end index {end_idx}. Cannot plot.")
-
-
 def newGraph(model, df1, scaler, test_data, X_test):
     x_input = test_data[X_test.shape[0] + 1:].reshape(1, -1)
     temp_input = list(x_input)
@@ -88,40 +56,35 @@ def newGraph(model, df1, scaler, test_data, X_test):
     n_steps = 100
     i = 0
     mainVal = 0
-    daysToPredict = 15
-    while (i < daysToPredict):
-
-        if (len(temp_input) > 100):
-            # print(temp_input)
+    while (i < 15):  # Prediction for 15 days
+        if len(temp_input) > 100:
             x_input = np.array(temp_input[1:])
             print("{} day input {}".format(i, x_input))
             x_input = x_input.reshape(1, -1)
             x_input = x_input.reshape((1, n_steps, 1))
-            # print(x_input)
             yhat = model.predict(x_input, verbose=0)
             print("{} day output {}".format(i, yhat))
             inverse_data = scaler.inverse_transform(yhat)
-            if (i == 29):
+            if (i == 14):  # Checking for the last prediction day
                 mainVal = inverse_data
             temp_input.extend(yhat[0].tolist())
             temp_input = temp_input[1:]
-            # print(temp_input)
             lst_output.extend(yhat.tolist())
-            i = i + 1
+            i += 1
         else:
             x_input = x_input.reshape((1, n_steps, 1))
             yhat = model.predict(x_input, verbose=0)
             inverse_data = scaler.inverse_transform(yhat)
-            if (i == 29):
+            if (i == 14):  # Checking for the last prediction day
                 mainVal = inverse_data
             print(yhat[0])
             temp_input.extend(yhat[0].tolist())
             print(len(temp_input))
             lst_output.extend(yhat.tolist())
-            i = i + 1
+            i += 1
 
     day_new = np.arange(1, 101)
-    day_pred = np.arange(101, 131)
+    day_pred = np.arange(101, 116)  # Adjust for 15 days prediction
     fig, ax = plt.subplots(figsize=(10, 6), facecolor='#0E1117')
     ax.plot(day_new, scaler.inverse_transform(df1[len(df1) - 100:]), label='Dados Originais', linewidth=5)
     ax.plot(day_pred, scaler.inverse_transform(lst_output), label='Predições', linewidth=5)
@@ -143,105 +106,6 @@ def filter_companies(search_term, company_dict):
     filtered_companies = [code for code in company_dict.keys() if
                           search_term.upper() in code or search_term.upper() in company_dict[code].upper()]
     return filtered_companies
-
-
-def ScrappingToGetSentiments(finviz_url, company):
-    url = finviz_url + company
-    news_tables = {}
-    req = Request(url=url, headers={'user-agent': 'my-app'})
-    response = urlopen(req)
-    html = BeautifulSoup(response, 'html')
-    news_table = html.find(id='news-table')
-    news_tables[company] = news_table
-
-    parsed_data = []
-    for ticker, news_table in news_tables.items():
-        for row in news_table.findAll('tr'):
-            if row.a is not None:
-                title = row.a.text
-                date_data = row.td.text.split(' ')
-                if len(date_data) == 21:
-                    time = date_data[12]
-                else:
-                    date = date_data[12]
-                    time = date_data[13]
-                parsed_data.append([ticker, date, time, title])
-
-    df = pd.DataFrame(parsed_data, columns=['ticker', 'date', 'time', 'title'])
-    return df
-
-
-def SimpleSentimentAnalyser(df):
-    positive_words = ['good', 'great', 'excellent', 'positive', 'up', 'gain', 'rise']
-    negative_words = ['bad', 'poor', 'negative', 'down', 'loss', 'drop']
-
-    total_score = 0
-    for title in df['title']:
-        score = 0
-        for word in positive_words:
-            if word in title.lower():
-                score += 1
-        for word in negative_words:
-            if word in title.lower():
-                score -= 1
-        total_score += score
-
-    average_score = total_score / len(df)
-    return average_score
-
-
-def create_circular_meter(score):
-    percentage = (score + 1) / 2 * 100
-    theta = np.linspace(0, 2 * np.pi, 100)
-    r = 0.5
-
-    x = r * np.cos(theta)
-    y = r * np.sin(theta)
-    plt.figure(facecolor='#0E1117')
-    fig, ax = plt.subplots(figsize=(1, 1), facecolor="#0E1117")
-    ax.set_facecolor("#0E1117")
-    if percentage >= 55:
-        ax.plot(x, y, color='lime', linewidth=3)
-    elif 55 >= percentage >= 50:
-        ax.plot(x, y, color='orange', linewidth=3)
-    else:
-        ax.plot(x, y, color='tomato', linewidth=3)
-    ax.fill_between(x, y, color='#0E1117', alpha=1)
-
-    ax.text(0, 0, f"{int(percentage)}%", ha='center', va='center', fontsize=10, color="white")
-    ax.axis('equal')
-    ax.axis('off')
-    plt.tight_layout()
-    return fig
-
-
-def PrintPredictionPlot(scaler, test_data, test_predict):
-    # Convert to original scale if needed
-
-    actual_values = scaler.inverse_transform(test_data).flatten()
-    predicted_values = scaler.inverse_transform(test_predict).flatten()
-
-    min_length = min(len(actual_values), len(predicted_values))
-    actual_values = actual_values[:min_length]
-    predicted_values = predicted_values[:min_length]
-
-    # Create a DataFrame
-    test_results_df = pd.DataFrame({
-        "Actual Values": actual_values,
-        "Predicted Values": predicted_values
-    })
-
-    # Plotting
-    plt.figure(figsize=(12, 6))
-    plt.plot(test_results_df["Actual Values"], label='Actual Values')
-    plt.plot(test_results_df["Predicted Values"], label='Predicted Values')
-    plt.title('Test Results: Actual vs Predicted')
-    plt.xlabel('Time')
-    plt.ylabel('Stock Price')
-    plt.legend()
-
-    # Display the plot in Streamlit
-    st.pyplot(plt)
 
 
 def main():
