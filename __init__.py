@@ -6,6 +6,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
+from datetime import datetime, timedelta
 
 
 def create_dataset(dataset, time_step=1):
@@ -85,15 +86,43 @@ def newGraph(model, df1, scaler, test_data, X_test):
 
     day_new = np.arange(1, 101)
     day_pred = np.arange(101, 116)  # Adjust for 15 days prediction
+    # Define the start and end dates for the plot
+    start_date = datetime.now() - timedelta(weeks=10)
+    end_date = datetime.now() + timedelta(days=15)
+
+    # Calculate the total duration in days and the interval
+    total_days = (end_date - start_date).days
+    interval_days = total_days // 3  # Dividing the total duration into three intervals
+
+    # Generate the four equidistant dates
+    equidistant_dates = [start_date + timedelta(days=i*interval_days) for i in range(4)]
+
+    # Format the dates for display
+    formatted_dates = [date.strftime('%d-%m-%Y') for date in equidistant_dates]
+
+    # Plot setup
     fig, ax = plt.subplots(figsize=(10, 6), facecolor='#0E1117')
+    day_new = np.arange(1, 101)
+    day_pred = np.arange(101, 116)  # Adjust for 15 days prediction
     ax.plot(day_new, scaler.inverse_transform(df1[len(df1) - 100:]), label='Dados Originais', linewidth=5)
     ax.plot(day_pred, scaler.inverse_transform(lst_output), label='Predições', linewidth=5)
+
+    # Set positions for the labels on the X-axis
+    x_positions = np.linspace(0, 114, 4)  # For 115 data points
+
+    # Apply the labels
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(formatted_dates, rotation=45)
+
+    # Additional plot settings
     ax.set_facecolor("black")
     ax.set_xlabel('Time', color='white')
     ax.set_ylabel('Value', color='white')
     ax.tick_params(axis='x', colors='white')
     ax.tick_params(axis='y', colors='white')
     ax.legend()
+
+    # Streamlit components
     col1, col2 = st.columns(2)
     col1.title("Previsão:")
     col1.write(
