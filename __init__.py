@@ -126,7 +126,7 @@ def newGraph(model, df1, scaler, test_data, X_test):
     col1, col2 = st.columns(2)
     col1.title("Previsão:")
     col1.write(
-        f"<span style=' font-size: 20px;'>O preço aproximado será de:</span> <span style='color: green; font-size: 30px; font-weight: bold; font-style: italic;'>{mainVal[0][0]:.2f}</span>",
+        f"<span style=' font-size: 20px;'>O preço aproximado será de: R$</span> <span style='color: green; font-size: 30px; font-weight: bold; font-style: italic;'>{mainVal[0][0]:.2f}</span>",
         unsafe_allow_html=True)
     col2.pyplot(fig)
 
