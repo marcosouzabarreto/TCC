@@ -57,7 +57,7 @@ def newGraph(model, df1, scaler, test_data, X_test):
     n_steps = 100
     i = 0
     mainVal = 0
-    while (i < 15):  # Prediction for 15 days
+    while (i < 15):
         if len(temp_input) > 100:
             x_input = np.array(temp_input[1:])
             print("{} day input {}".format(i, x_input))
@@ -66,7 +66,7 @@ def newGraph(model, df1, scaler, test_data, X_test):
             yhat = model.predict(x_input, verbose=0)
             print("{} day output {}".format(i, yhat))
             inverse_data = scaler.inverse_transform(yhat)
-            if (i == 14):  # Checking for the last prediction day
+            if (i == 14):
                 mainVal = inverse_data
             temp_input.extend(yhat[0].tolist())
             temp_input = temp_input[1:]
@@ -76,7 +76,7 @@ def newGraph(model, df1, scaler, test_data, X_test):
             x_input = x_input.reshape((1, n_steps, 1))
             yhat = model.predict(x_input, verbose=0)
             inverse_data = scaler.inverse_transform(yhat)
-            if (i == 14):  # Checking for the last prediction day
+            if (i == 14): 
                 mainVal = inverse_data
             print(yhat[0])
             temp_input.extend(yhat[0].tolist())
@@ -85,36 +85,29 @@ def newGraph(model, df1, scaler, test_data, X_test):
             i += 1
 
     day_new = np.arange(1, 101)
-    day_pred = np.arange(101, 116)  # Adjust for 15 days prediction
-    # Define the start and end dates for the plot
+    day_pred = np.arange(101, 116) 
+    
     start_date = datetime.now() - timedelta(weeks=10)
     end_date = datetime.now() + timedelta(days=15)
 
-    # Calculate the total duration in days and the interval
     total_days = (end_date - start_date).days
-    interval_days = total_days // 3  # Dividing the total duration into three intervals
+    interval_days = total_days // 3 
 
-    # Generate the four equidistant dates
     equidistant_dates = [start_date + timedelta(days=i*interval_days) for i in range(4)]
 
-    # Format the dates for display
     formatted_dates = [date.strftime('%d-%m-%Y') for date in equidistant_dates]
 
-    # Plot setup
     fig, ax = plt.subplots(figsize=(10, 6), facecolor='#0E1117')
     day_new = np.arange(1, 101)
-    day_pred = np.arange(101, 116)  # Adjust for 15 days prediction
+    day_pred = np.arange(101, 116) 
     ax.plot(day_new, scaler.inverse_transform(df1[len(df1) - 100:]), label='Dados Originais', linewidth=5)
     ax.plot(day_pred, scaler.inverse_transform(lst_output), label='Predições', linewidth=5)
 
-    # Set positions for the labels on the X-axis
-    x_positions = np.linspace(0, 114, 4)  # For 115 data points
+    x_positions = np.linspace(0, 114, 4)
 
-    # Apply the labels
     ax.set_xticks(x_positions)
     ax.set_xticklabels(formatted_dates, rotation=45)
 
-    # Additional plot settings
     ax.set_facecolor("black")
     ax.set_xlabel('Time', color='white')
     ax.set_ylabel('Value', color='white')
@@ -122,7 +115,6 @@ def newGraph(model, df1, scaler, test_data, X_test):
     ax.tick_params(axis='y', colors='white')
     ax.legend()
 
-    # Streamlit components
     col1, col2 = st.columns(2)
     col1.title("Previsão:")
     col1.write(
@@ -228,17 +220,13 @@ def main():
             stock = yf.Ticker(company)
             hist = stock.history(period=(color + 'y'))
 
-            # Assign the historical stock data to the DataFrame 'df'
             df = hist.copy()
 
-            # Handling missing values using forward fill
             df.fillna(method='ffill', inplace=True)
 
-            # Display the real-time stock data in Streamlit
             df1, scaler = DataPreProcessing(df)
             train_predict, test_predict, model, df1, test_data, X_test = SplittingDataSet(df1, scaler)
-            # PlotGraph(train_predict, test_predict, df1, scaler)
-            # PrintPredictionPlot(scaler, test_data, test_predict)
+
             newGraph(model, df1, scaler, test_data, X_test)
 
 
